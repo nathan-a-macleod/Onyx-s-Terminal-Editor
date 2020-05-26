@@ -21,7 +21,7 @@
 
 #define KILO_VERSION "0.0.1"
 #define KILO_TAB_STOP 8
-#define KILO_QUIT_TIMES 3
+#define KILO_QUIT_TIMES 2 // I think it should be 2, not 3
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -813,7 +813,7 @@ void editorDrawStatusBar(struct abuf *ab) {
   char status[80], rstatus[80];
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
     E.filename ? E.filename : "[No Name]", E.numrows,
-    E.dirty ? "(modified)" : "");
+    E.dirty ? "(modified) | HELP: Ctrl-G" : "| HELP: Ctrl-G");
   int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
     E.syntax ? E.syntax->filetype : "no ft", E.cy + 1, E.numrows);
   if (len > E.screencols) len = E.screencols;
@@ -1021,11 +1021,24 @@ void editorProcessKeypress() {
     case CTRL_KEY('l'):
     case '\x1b':
       break;
-
-    default:
-      editorInsertChar(c);
-      break;
+	case CTRL_KEY('g'):
+		editorSetStatusMessage("Ctrl-G = help | Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+		break;
+  default:
+    editorInsertChar(c);
+    break;
   }
+	// Autocompletion for things like brackets:
+	if (c == 40){
+		editorInsertChar(41);
+		editorMoveCursor(1000);
+	} else if (c == 91){
+		editorInsertChar(93);
+		editorMoveCursor(1000);
+	} else if (c == 123){
+		editorInsertChar(125);
+		editorMoveCursor(1000);
+	}
 
   quit_times = KILO_QUIT_TIMES;
 }
@@ -1058,12 +1071,11 @@ int main(int argc, char *argv[]) {
   }
 
   editorSetStatusMessage(
-    "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+    "Ctrl-G = help | Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
 
   while (1) {
     editorRefreshScreen();
     editorProcessKeypress();
   }
-
   return 0;
 }
